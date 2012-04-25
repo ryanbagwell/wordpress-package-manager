@@ -2,7 +2,7 @@
 from optparse import OptionParser
 import sys, os, re, zipfile
 import urllib2
-import pysvn
+
 
 
 class WPM(object):
@@ -55,8 +55,21 @@ class WPM(object):
         print "Done"
         
     def install(self):
-        import pysvn
+        """
+        Will download and save the plugins
+        """
+        plugin_name =  search_str = sys.argv[2]
         
+        download_url = "http://downloads.wordpress.org/plugin/%s.zip" % (plugin_name)
+        
+        contents = self._download_data(download_url)
+        
+        location = self.options.__dict__.get('location')
+        local = open(''.join([location,'/',plugin_name,'.zip']), 'w')
+        local.write(contents)
+        local.close()
+        
+        self._extract(''.join([location,'/',plugin_name,'.zip']))
         
     def search(self):
         """
@@ -111,6 +124,38 @@ class WPM(object):
         
     def _get_plugin_database(self):
         return open(os.path.expanduser('~/.wpm/available_plugins'), 'r')
+        
+    def _download_data(self, url):
+        
+        conn = urllib2.urlopen(url)
+        
+        data = ""
+        
+        file_size_dl = 0
+        block_sz = 500
+        while True:
+            buffer = conn.read(block_sz)
+            if not buffer:
+                break
+
+            file_size_dl += len(buffer)
+            data += buffer
+            status = "Got %s bytes of plugins list" % (file_size_dl)
+            status = status + chr(8)*(len(status)+1)
+            print status,
+        
+        return data
+        
+    def _extract(self,file):
+        location = self.options.__dict__.get('location')
+        print "\r\nExtracting ..."
+        z = zipfile.ZipFile(file)
+        z.extractall(location)
+        print "Deleting zip file"
+        os.remove(file)
+        print "Done"        
+        
+        
     
 
 if __name__ == '__main__':
