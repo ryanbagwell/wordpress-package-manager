@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from disutils import setup
+from distutils.core import setup
 
 setup(name='Wordpress Package Manager',
       version='1.0',
@@ -7,6 +7,5 @@ setup(name='Wordpress Package Manager',
       author='Ryan Bagwell',
       author_email='ryan@ryanbagwell.com',
       url='https://github.com/ryanbagwell',
-      packages=['distutils', 'distutils.command', 'pysvn'],
-      scripts=['bin/install'],
+      scripts=['wpm'],
      )
