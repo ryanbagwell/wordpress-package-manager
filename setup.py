@@ -2,7 +2,7 @@
 from distutils.core import setup
 
 setup(name='Wordpress Package Manager',
-      version='1.0',
+      version='0.1',
       description='A command-line tool for installing WordPress plugins',
       author='Ryan Bagwell',
       author_email='ryan@ryanbagwell.com',

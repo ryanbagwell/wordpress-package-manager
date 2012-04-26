@@ -9,22 +9,35 @@ class WPM(object):
     wp_latest = "http://wordpress.org/latest.zip"
     plugins_svn = "http://plugins.svn.wordpress.org"
     plugin_db_path = os.path.expanduser('~/.wpm/available_plugins')
-    
 
     def __init__(self):
-        self.parser = OptionParser()        
-        
+        self.parser = OptionParser()
+        self.parser.usage = "How do I use this thing?"
+
     
     def main(self):
         self.set_options()
         self.options, self.args = self.parser.parse_args()
         
-        getattr(self,sys.argv[1])() 
+        if len(sys.argv) <= 1:
+            print "Please specificy a command: installframework, install [plugin name], search [plugin search string], update."
+            return
+        
+        if not hasattr(self, sys.argv[1]):
+            print sys.argv[1] + " is not a valid command."
+            return
+             
+        try:
+            getattr(self,sys.argv[1])() 
+        except:
+            print "Sorry, there was an error, or your command wasn't found. Please try again."
+        else:
+            print "\r\nDone."
     
     def set_options(self):
         
         self.parser.add_option("-l", "--location", metavar="DIR", help="The location to save the file to", default=os.getcwd())
-        self.parser.add_option("-r", "--requirements", metavar="FILE", help="The location of the requirements file", default=os.getcwd())
+        self.parser.add_option("-r", "--requirements", metavar="FILE", help="The location of the requirements file",)
         
     def installframework(self):
         file = ''.join([self.options.__dict__.get('location'),'/','wordpres.zip'])
@@ -89,15 +102,12 @@ class WPM(object):
         local.write("\r\n".join(plugins))
         
         local.close()
-        print "\r\nDone"
         
         
     def _get_plugin_database(self):
         return open(os.path.expanduser('~/.wpm/available_plugins'), 'r+')
         
     def _download_data(self, url):
-        
-        print url
         
         conn = urllib2.urlopen(url)
         
@@ -113,7 +123,7 @@ class WPM(object):
             file_size_dl += len(buffer)
             data += buffer
             status = "Downloaded %s bytes" % (file_size_dl)
-            status = status + chr(8)*(len(status)+1)
+            status = status + chr(8)*(len(status)+2)
             print status,
         
         return data
@@ -125,10 +135,12 @@ class WPM(object):
         z.extractall(location)
         print "Deleting zip file"
         os.remove(file)
-        print "Done"
-        
     
     def _wp_svn_install(self, plugin_name):
+        """
+        Download and extract the specified plugin from the
+        official WordPress plugin repository
+        """
         download_url = "http://downloads.wordpress.org/plugin/%s.zip" % (plugin_name.replace("\n",''))
         contents = self._download_data(download_url)
         file = ''.join([self.options.__dict__.get('location'),'/',plugin_name,'.zip'])
