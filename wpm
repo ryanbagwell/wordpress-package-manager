@@ -2,7 +2,7 @@
 from optparse import OptionParser
 import sys, os, re, zipfile
 import urllib2
-
+import subprocess
 
 
 class WPM(object):
@@ -26,7 +26,7 @@ class WPM(object):
         if not hasattr(self, sys.argv[1]):
             print sys.argv[1] + " is not a valid command."
             return
-             
+        
         try:
             getattr(self,sys.argv[1])() 
         except:
@@ -53,8 +53,9 @@ class WPM(object):
         Will download and save the plugins
         """
         plugin_name = sys.argv[2]
-  
-        if 'requirements' in self.options.__dict__:
+        
+ 
+        if self.options.__dict__.get('requirements',None) is not None:
             file = open(self.options.__dict__.get('requirements'), 'r')
             requirements = file.readlines()
             file.close()
@@ -141,13 +142,12 @@ class WPM(object):
         Download and extract the specified plugin from the
         official WordPress plugin repository
         """
-        download_url = "http://downloads.wordpress.org/plugin/%s.zip" % (plugin_name.replace("\n",''))
-        contents = self._download_data(download_url)
-        file = ''.join([self.options.__dict__.get('location'),'/',plugin_name,'.zip'])
-        local = open(file, 'w')
-        local.write(contents)
-        local.close()
-        self._extract(file)        
+        svn_url = '/'.join([self.plugins_svn,plugin_name.replace("\n",''),'trunk'])
+        print "Exporting %s from Wordpress SVN" % (plugin_name)
+        proc = subprocess.Popen(['svn','export',svn_url,self.options.__dict__.get('location')+'/'+plugin_name],stdout=subprocess.PIPE)
+        for line in proc.stdout:
+            if line is not "\r\n": print line
+        print "Got " + plugin_name
         
     def setup(self):
 
