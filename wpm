@@ -9,47 +9,41 @@ class WPM(object):
     wp_latest = "http://wordpress.org/latest.zip"
     plugins_svn = "http://plugins.svn.wordpress.org"
     plugin_db_path = os.path.expanduser('~/.wpm/available_plugins')
+    target_location = None
 
     def __init__(self):
         self.parser = OptionParser()
-        self.parser.usage = "How do I use this thing?"
-
+        self.parser.usage = "wpm installframwork|install|search|update <plugin name> <location> [options]"
     
     def main(self):
         self.set_options()
         self.options, self.args = self.parser.parse_args()
         
-        if len(sys.argv) <= 1:
-            print "Please specificy a command: installframework, install [plugin name], search [plugin search string], update."
-            return
-        
-        if not hasattr(self, sys.argv[1]):
-            print sys.argv[1] + " is not a valid command."
-            return
-        
+        self._set_location()
+
         try:
-            getattr(self,sys.argv[1])() 
-        except:
-            print "Sorry, there was an error, or your command wasn't found. Please try again."
-        else:
-            print "\r\nDone."
+            getattr(self,self.args[0])()
+        except IndexError:
+            print "Please specify a command."
+            return
+        except AttributeError:
+            print "Invalid Command. Usage: %s" % self.parser.usage
+            return
+
+        print "Installation Complete."
     
     def set_options(self):
-        
-        self.parser.add_option("-l", "--location", metavar="DIR", help="The location to save the file to", default=os.getcwd())
         self.parser.add_option("-r", "--requirements", metavar="FILE", help="The location of the requirements file",)
-
 
     """
     Downloads and installs the WordPress framework.
     """        
     def installframework(self):
-        file = ''.join([self.options.__dict__.get('location'),'/','wordpres.zip'])
+        file = ''.join([self.target_location,'/','wordpres.zip'])
         data = self._download_data(self.wp_latest)
         local = open(file, 'w')
         local.write(data)
         local.close()
-              
         self._extract(file)
 
     """
@@ -65,14 +59,9 @@ class WPM(object):
             file.close()
             
             for line in requirements:
-                line = line.strip()
-                
-                if (line == ''): continue
-            
-                self._wp_svn_install(line)
-                print "Installed " + line
+                self._route_install(line)
         else:
-            self._wp_svn_install(plugin_name)
+            self._route_install(line)
 
 
     """
@@ -91,8 +80,10 @@ class WPM(object):
     List all installed plugins
     """            
     def list(self):
-        except NotImplementedError
-
+        try:
+            pass
+        except:
+            NotImplementedError
 
     """
     Update the local list of plugins
@@ -111,7 +102,21 @@ class WPM(object):
         local.write("\r\n".join(plugins))
         
         local.close()
-        
+
+
+    """
+    Sets and verifies the install path
+    """
+    def _set_location(self):
+        print "Verifying install location"
+        for arg in self.args:
+            path = os.path.abspath(self.args[-1])
+            if os.path.exists(path):
+                self.target_location = path
+
+        if (self.target_location is None):
+            print "Invalid install location specified, or none provided. Falling back to current directory."
+            self.target_location = os.getcwd()
 
     """
     Get the list of available plugins
@@ -147,27 +152,73 @@ class WPM(object):
     """
     Unzip a plugin in .zip format
     """        
-    def _extract(self,file):
-        location = self.options.__dict__.get('location')
+    def _extract(self, file):
         print "\r\nExtracting ..."
         z = zipfile.ZipFile(file)
-        z.extractall(location)
+        z.extractall(self.target_location)
         print "Deleting zip file"
         os.remove(file)
+
+
+    """
+    Decides which protocol to use to install the plugin
+    """
+    def _route_install(self, line):
+        
+        if line == '' or line[:1] == '#':
+            return
+        elif line[:4] == 'svn+' or line[:4] == "git+":
+            self._install_remote(line)
+        else:    
+            self._wp_svn_install(line)
+        
+        print "Installed " + line
+        
 
     """
     Download and extract the specified plugin from the
     official WordPress plugin repository
     """    
     def _wp_svn_install(self, plugin_name):
-
         svn_url = '/'.join([self.plugins_svn,plugin_name.replace("\n",''),'trunk'])
         print "Exporting %s from Wordpress SVN" % (plugin_name)
-        proc = subprocess.Popen(['svn','export',svn_url,self.options.__dict__.get('location')+'/'+plugin_name],stdout=subprocess.PIPE)
-        for line in proc.stdout:
-            if line is not "\r\n": print line
-        print "Got " + plugin_name
+        self._run_command(['svn','export',svn_url,''.join([self.target_location,'/',plugin_name])])
 
+    """
+    Installs from a remote SVN or GIT repository with a properly
+    formatted location string
+    """
+    def _install_remote(self, location_string=None):
+        parts = location_string[4:].split('#')
+        if location_string[:3] == 'git':
+            self._generic_git_install(parts[0], parts[1])
+        elif location_string[:3] == 'svn':
+            self._generic_svn_install(parts[0], parts[1])
+        else:
+            print "Invalid protocol %s."
+            return False
+    
+    """
+    Exports from the trunk of an svn repository
+    """        
+    def _generic_svn_install(self, url=None, name=None):
+        print "Exporting %s from %s" % (name, url)        
+        self._run_command(['svn','export',url,''.join([self.target_location,'/',name])])
+        
+    """
+    Clones a git repository
+    """        
+    def _generic_git_install(self, url=None, name=None):
+        print "Cloning %s from %s" % (name, url)
+        self._run_command(['git','clone',''.join([url,self.target_location+'/'+name])])
+    
+    """
+    Runs a command
+    """        
+    def _run_command(self, cmd_list):
+        proc = subprocess.Popen(cmd_list,stdout=subprocess.PIPE)
+        for line in proc.stdout:
+            if line is not "\r\n": print line        
 
     """
     Create the setup directory that contains the package repositories
