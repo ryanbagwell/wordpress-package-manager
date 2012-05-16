@@ -38,7 +38,11 @@ class WPM(object):
         
         self.parser.add_option("-l", "--location", metavar="DIR", help="The location to save the file to", default=os.getcwd())
         self.parser.add_option("-r", "--requirements", metavar="FILE", help="The location of the requirements file",)
-        
+
+
+    """
+    Downloads and installs the WordPress framework.
+    """        
     def installframework(self):
         file = ''.join([self.options.__dict__.get('location'),'/','wordpres.zip'])
         data = self._download_data(self.wp_latest)
@@ -47,11 +51,11 @@ class WPM(object):
         local.close()
               
         self._extract(file)
-        
+
+    """
+    Downloads and unzips a plugin
+    """        
     def install(self):
-        """
-        Will download and save the plugins
-        """
         plugin_name = sys.argv[2]
         
  
@@ -69,27 +73,31 @@ class WPM(object):
                 print "Installed " + line
         else:
             self._wp_svn_install(plugin_name)
-        
+
+
+    """
+    Search for available plugins to instal
+    """      
     def search(self):
-        """
-        Will search for available Wordpress Packages
-        """
+
         local = self._get_plugin_database()
         search_str = sys.argv[2]
         
         for line in local.readlines():
             if re.search(search_str, line): print line.replace("\r\n",'')
-            
-    def list(self):
-        """
-        Will list installed packages
-        """
-        pass
 
+
+    """
+    List all installed plugins
+    """            
+    def list(self):
+        except NotImplementedError
+
+
+    """
+    Update the local list of plugins
+    """
     def update(self):
-        """
-        Updates the list of available Wordpress Plugins
-        """ 
         
         print "Getting plugins list"
 
@@ -104,10 +112,17 @@ class WPM(object):
         
         local.close()
         
-        
+
+    """
+    Get the list of available plugins
+    """        
     def _get_plugin_database(self):
         return open(os.path.expanduser('~/.wpm/available_plugins'), 'r+')
-        
+
+
+    """
+    Common method to download a file from a given url
+    """        
     def _download_data(self, url):
         
         conn = urllib2.urlopen(url)
@@ -128,7 +143,10 @@ class WPM(object):
             print status,
         
         return data
-        
+
+    """
+    Unzip a plugin in .zip format
+    """        
     def _extract(self,file):
         location = self.options.__dict__.get('location')
         print "\r\nExtracting ..."
@@ -136,19 +154,24 @@ class WPM(object):
         z.extractall(location)
         print "Deleting zip file"
         os.remove(file)
-    
+
+    """
+    Download and extract the specified plugin from the
+    official WordPress plugin repository
+    """    
     def _wp_svn_install(self, plugin_name):
-        """
-        Download and extract the specified plugin from the
-        official WordPress plugin repository
-        """
+
         svn_url = '/'.join([self.plugins_svn,plugin_name.replace("\n",''),'trunk'])
         print "Exporting %s from Wordpress SVN" % (plugin_name)
         proc = subprocess.Popen(['svn','export',svn_url,self.options.__dict__.get('location')+'/'+plugin_name],stdout=subprocess.PIPE)
         for line in proc.stdout:
             if line is not "\r\n": print line
         print "Got " + plugin_name
-        
+
+
+    """
+    Create the setup directory that contains the package repositories
+    """        
     def setup(self):
 
         print "Creating .wpm directory"
