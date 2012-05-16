@@ -162,6 +162,7 @@ class WPM(object):
 
     """
     Decides which protocol to use to install the plugin
+    TODO: Don't automatically install if the install location already exists
     """
     def _route_install(self, line):
         
@@ -210,7 +211,7 @@ class WPM(object):
     """        
     def _generic_git_install(self, url=None, name=None):
         print "Cloning %s from %s" % (name, url)
-        self._run_command(['git','clone',''.join([url,self.target_location+'/'+name])])
+        self._run_command(['git','clone',url,''.join([url,self.target_location+'/'+name])])
     
     """
     Runs a command
