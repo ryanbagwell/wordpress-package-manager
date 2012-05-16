@@ -2,15 +2,6 @@
 from distutils.core import setup
 from distutils.command.install_data import install_data
 
-class PostInstall(install_data):
-
-    def run(self):
-        install_data.run(self)
-        proc = subprocess.Popen(['wpm', 'setup'],stdout=subprocess.PIPE)
-        for line in proc.stdout:
-            if line is not "\r\n": print line 
-        
-
 setup(name='Wordpress-Package-Manager',
       version='0.3',
       description='A command-line tool for installing WordPress plugins',
