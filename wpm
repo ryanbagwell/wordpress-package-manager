@@ -1,8 +1,6 @@
-#!/usr/bin/python
+#!/Library/Frameworks/Python.framework/Versions/2.7/Resources/Python.app/Contents/MacOS/Python
 from optparse import OptionParser
-import sys, os, re, zipfile
-import urllib2
-import subprocess
+import sys, os, re, zipfile, shutil, urllib2, subprocess, re
 
 
 class WPM(object):
@@ -18,7 +16,7 @@ class WPM(object):
     def main(self):
         self.set_options()
         self.options, self.args = self.parser.parse_args()
-        
+
         self._set_location()
 
         try:
@@ -39,6 +37,15 @@ class WPM(object):
     Downloads and installs the WordPress framework.
     """        
     def installframework(self):
+        
+        if os.path.exists(self.target_location+'/wp-config.php'):
+            answer = raw_input("It looks like WordPress has already been installed in this directory. Should I overwrite? (y/n):")
+        else:
+            answer = 'y'
+
+        if answer != 'y':
+            sys.exit("Aborting WordPress installation.")
+                
         file = ''.join([self.target_location,'/','wordpres.zip'])
         data = self._download_data(self.wp_latest)
         local = open(file, 'w')
@@ -46,13 +53,28 @@ class WPM(object):
         local.close()
         self._extract(file)
 
+        for filename in os.listdir(self.target_location+'/wordpress/'):
+            src = self.target_location+'/wordpress/'+filename
+            dest = self.target_location+'/'+filename
+            if os.path.exists(dest):
+                try:
+                    os.remove(dest)
+                except:
+                    shutil.rmtree(dest)
+            shutil.move(src, dest)
+        
+        shutil.rmtree(self.target_location+'/wordpress/')
+        shutil.move(self.target_location+'/wp-config-sample.php', self.target_location+'/wp-config.php')
+        
+        self._set_security_keys(self.target_location+'/wp-config.php')
+        
+
     """
     Downloads and unzips a plugin
     """        
     def install(self):
         plugin_name = sys.argv[2]
-        
- 
+
         if self.options.__dict__.get('requirements',None) is not None:
             file = open(self.options.__dict__.get('requirements'), 'r')
             requirements = file.readlines()
@@ -61,11 +83,12 @@ class WPM(object):
             for line in requirements:
                 self._route_install(line)
         else:
-            self._route_install(line)
+            
+            self._route_install(plugin_name)
 
 
     """
-    Search for available plugins to instal
+    Search for available plugins to install
     """      
     def search(self):
 
@@ -109,14 +132,23 @@ class WPM(object):
     """
     def _set_location(self):
         print "Verifying install location"
-        for arg in self.args:
-            path = os.path.abspath(self.args[-1])
-            if os.path.exists(path):
-                self.target_location = path
 
-        if (self.target_location is None):
-            print "Invalid install location specified, or none provided. Falling back to current directory."
+        if (len(self.args) <= 1):
             self.target_location = os.getcwd()
+            return
+
+        path = os.path.abspath(self.args[-1])
+
+        if os.path.exists(path):
+            self.target_location = path
+            return
+
+        try:
+            os.makedirs(path)
+        except:
+            sys.exit("Invalid path. Couldn't create %s. Exiting." % path)
+        else:
+            self.target_location = path
 
     """
     Get the list of available plugins
@@ -153,7 +185,7 @@ class WPM(object):
     Unzip a plugin in .zip format
     """        
     def _extract(self, file):
-        print "\r\nExtracting ..."
+        print "\r\nUnzipping ..."
         z = zipfile.ZipFile(file)
         z.extractall(self.target_location)
         print "Deleting zip file"
@@ -162,16 +194,15 @@ class WPM(object):
 
     """
     Decides which protocol to use to install the plugin
-    TODO: Don't automatically install if the install location already exists
     """
     def _route_install(self, line):
         
         if line == '' or line[:1] == '#':
             return
         elif line[:4] == 'svn+' or line[:4] == "git+":
-            self._install_remote(line)
+            self._install_remote(line.strip())
         else:    
-            self._wp_svn_install(line)
+            self._wp_svn_install(line.strip())
         
         print "Installed " + line
         
@@ -211,7 +242,7 @@ class WPM(object):
     """        
     def _generic_git_install(self, url=None, name=None):
         print "Cloning %s from %s" % (name, url)
-        self._run_command(['git','clone',url,''.join([url,self.target_location+'/'+name])])
+        self._run_command(['git','clone',''.join([url,self.target_location+'/'+name])])
     
     """
     Runs a command
@@ -219,7 +250,36 @@ class WPM(object):
     def _run_command(self, cmd_list):
         proc = subprocess.Popen(cmd_list,stdout=subprocess.PIPE)
         for line in proc.stdout:
-            if line is not "\r\n": print line        
+            if line is not "\r\n": print line
+
+    """
+    Writes new security keys to the wp-config.php file
+    """
+    def _set_security_keys(self, config_file = None):
+        
+        if not config_file:
+            return
+        
+        print "Generating new security keys"
+
+        try:
+            keys = urllib2.urlopen('https://api.wordpress.org/secret-key/1.1/salt/').readlines()
+        except:
+            print "Couldn't generate security keys from WordPress API. You'll have to set them yourself."
+            return;
+        
+        config_file = open(self.target_location+'/wp-config.php','r+')
+        lines = config_file.readlines()
+               
+        for i in range(len(lines)):
+            for key in keys:
+                match = re.findall("^define\('(.*)',", key)
+                if match is not None and match[0] in lines[i]:
+                    lines[i] = key
+        
+        config_file.seek(0)
+        config_file.writelines(lines)
+
 
     """
     Create the setup directory that contains the package repositories
