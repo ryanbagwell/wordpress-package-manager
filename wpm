@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 from optparse import OptionParser
-import sys, os, re, zipfile, shutil, urllib2, subprocess, re
+import sys, os, re, zipfile, shutil, urllib2, subprocess, re, tempfile
 
 
 class WPM(object):
@@ -8,6 +8,7 @@ class WPM(object):
     plugins_svn = "http://plugins.svn.wordpress.org"
     plugin_db_path = os.path.expanduser('~/.wpm/available_plugins')
     target_location = None
+    tmp_dir = tempfile.mkdtemp()
 
     def __init__(self):
         self.parser = OptionParser()
@@ -214,7 +215,10 @@ class WPM(object):
     def _wp_svn_install(self, plugin_name):
         svn_url = '/'.join([self.plugins_svn,plugin_name.replace("\n",''),'trunk'])
         print "Exporting %s from Wordpress SVN" % (plugin_name)
-        self._run_command(['svn','export',svn_url,''.join([self.target_location,'/',plugin_name])])
+        self._run_command(['svn', 'export', svn_url, self.tmp_dir+'/'+plugin_name ])
+        for obj in os.listdir( self.tmp_dir+'/'+plugin_name ):
+            shutil.move( '/'.join([self.tmp_dir, plugin_name, obj]), self.target_location )
+        
 
     """
     Installs from a remote SVN or GIT repository with a properly
@@ -234,20 +238,22 @@ class WPM(object):
     Exports from the trunk of an svn repository
     """        
     def _generic_svn_install(self, url=None, name=None):
-        print "Exporting %s from %s" % (name, url)        
-        self._run_command(['svn','export',url,''.join([self.target_location,'/',name])])
+        print "Exporting %s from %s" % (name, url)
+        assert False, self.target_location
+        self._run_command(['svn','export', url, self.target_location ])
         
     """
     Clones a git repository
     """        
     def _generic_git_install(self, url=None, name=None):
         print "Cloning %s from %s" % (name, url)
-        self._run_command(['git','clone',''.join([url,self.target_location+'/'+name])])
+        self._run_command(['git','clone', self.target_location])
     
     """
     Runs a command
     """        
     def _run_command(self, cmd_list):
+        print ' '.join(cmd_list)
         proc = subprocess.Popen(cmd_list,stdout=subprocess.PIPE)
         for line in proc.stdout:
             if line is not "\r\n": print line
