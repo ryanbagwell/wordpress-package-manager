@@ -1,14 +1,11 @@
 #! /usr/bin/env python
 from optparse import OptionParser
-import sys, os, re, zipfile, shutil, urllib2, subprocess, re, tempfile
+from lib import installers
+import sys, os, re, zipfile, shutil, urllib2, urllib, subprocess, re, tempfile, urlparse
 
 
 class WPM(object):
     wp_latest = "http://wordpress.org/latest.zip"
-    plugins_svn = "http://plugins.svn.wordpress.org"
-    plugin_db_path = os.path.expanduser('~/.wpm/available_plugins')
-    target_location = None
-    tmp_dir = tempfile.mkdtemp()
 
     def __init__(self):
         self.parser = OptionParser()
@@ -17,9 +14,7 @@ class WPM(object):
     def main(self):
         self.set_options()
         self.options, self.args = self.parser.parse_args()
-
-        self._set_location()
-
+        
         try:
             getattr(self,self.args[0])()
         except IndexError:
@@ -34,57 +29,55 @@ class WPM(object):
     def set_options(self):
         self.parser.add_option("-r", "--requirements", metavar="FILE", help="The location of the requirements file",)
 
+
     """
     Downloads and installs the WordPress framework.
     """        
     def installframework(self):
         
-        if os.path.exists(self.target_location+'/wp-config.php'):
+        print "Installing WordPress framework"
+                
+        installer = self._get_installer( protocol="ZIP")
+        installer = installer( arguments=self.args, options=self.options, url=self.wp_latest )
+
+        if os.path.exists( os.path.join(installer.target_location,'wp-config.php')):
             answer = raw_input("It looks like WordPress has already been installed in this directory. Should I overwrite? (y/n):")
         else:
             answer = 'y'
 
         if answer != 'y':
             sys.exit("Aborting WordPress installation.")
-                
-        file = ''.join([self.target_location,'/','wordpres.zip'])
-        data = self._download_data(self.wp_latest)
-        local = open(file, 'w')
-        local.write(data)
-        local.close()
-        self._extract(file)
-
-        for filename in os.listdir(self.target_location+'/wordpress/'):
-            src = self.target_location+'/wordpress/'+filename
-            dest = self.target_location+'/'+filename
-            if os.path.exists(dest):
-                try:
-                    os.remove(dest)
-                except:
-                    shutil.rmtree(dest)
+              
+        installer.install()
+        
+        for obj in os.listdir(os.path.join(installer.target_location,'wordpress')):
+            src = os.path.join(installer.target_location,'wordpress', obj)
+            dest = os.path.join(installer.target_location,'wordpress', '../', obj)
             shutil.move(src, dest)
+         
+        shutil.move(os.path.join(installer.target_location,'wp-config-sample.php'), os.path.join(installer.target_location,'wp-config.php'))
+    
+        os.rmdir(os.path.join(installer.target_location,'wordpress'))
         
-        shutil.rmtree(self.target_location+'/wordpress/')
-        shutil.move(self.target_location+'/wp-config-sample.php', self.target_location+'/wp-config.php')
-        
-        self._set_security_keys(self.target_location+'/wp-config.php')
+        installer.set_security_keys(os.path.join(installer.target_location,'wp-config.php'))
+
+        print "Done"
         
 
     """
-    Downloads and unzips a plugin
+    Installs a plugin
     """        
     def install(self):
-        plugin_name = sys.argv[2]
-
+        plugin_name = self.args[1]
+                
         if self.options.__dict__.get('requirements',None) is not None:
             file = open(self.options.__dict__.get('requirements'), 'r')
             requirements = file.readlines()
             file.close()
             
             for line in requirements:
-                self._route_install(line)
-        else:
-            
+                self._route_install( line )
+        else:            
             self._route_install(plugin_name)
 
 
@@ -93,7 +86,7 @@ class WPM(object):
     """      
     def search(self):
 
-        local = self._get_plugin_database()
+        local = open(os.path.expanduser('~/.wpm/available_plugins'), 'r+')
         search_str = sys.argv[2]
         
         for line in local.readlines():
@@ -115,176 +108,9 @@ class WPM(object):
     def update(self):
         
         print "Getting plugins list"
-
-        data =self._download_data(self.plugins_svn)
-        local = self._get_plugin_database()
-        existing_contents = list(local.read())
-        
-        plugins = re.findall('">(.*)/</a>',data)
-
-        local.seek(0)
-        local.write("\r\n".join(plugins))
-        
-        local.close()
-
-
-    """
-    Sets and verifies the install path
-    """
-    def _set_location(self):
-        print "Verifying install location"
-
-        if (len(self.args) <= 1):
-            self.target_location = os.getcwd()
-            return
-
-        path = os.path.abspath(self.args[-1])
-
-        if os.path.exists(path):
-            self.target_location = path
-            return
-
-        try:
-            os.makedirs(path)
-        except:
-            sys.exit("Invalid path. Couldn't create %s. Exiting." % path)
-        else:
-            self.target_location = path
-
-    """
-    Get the list of available plugins
-    """        
-    def _get_plugin_database(self):
-        return open(os.path.expanduser('~/.wpm/available_plugins'), 'r+')
-
-
-    """
-    Common method to download a file from a given url
-    """        
-    def _download_data(self, url):
-        
-        conn = urllib2.urlopen(url)
-        
-        data = ""
-        
-        file_size_dl = 0
-        block_sz = 500
-        while True:
-            buffer = conn.read(block_sz)
-            if not buffer:
-                break
-
-            file_size_dl += len(buffer)
-            data += buffer
-            status = "Downloaded %s bytes" % (file_size_dl)
-            status = status + chr(8)*(len(status)+2)
-            print status,
-        
-        return data
-
-    """
-    Unzip a plugin in .zip format
-    """        
-    def _extract(self, file):
-        print "\r\nUnzipping ..."
-        z = zipfile.ZipFile(file)
-        z.extractall(self.target_location)
-        print "Deleting zip file"
-        os.remove(file)
-
-
-    """
-    Decides which protocol to use to install the plugin
-    """
-    def _route_install(self, line):
-        
-        if line == '' or line[:1] == '#':
-            return
-        elif line[:4] == 'svn+' or line[:4] == "git+":
-            self._install_remote(line.strip())
-        else:    
-            self._wp_svn_install(line.strip())
-        
-        print "Installed " + line
-        
-
-    """
-    Download and extract the specified plugin from the
-    official WordPress plugin repository
-    """    
-    def _wp_svn_install(self, plugin_name):
-        svn_url = '/'.join([self.plugins_svn,plugin_name.replace("\n",''),'trunk'])
-        print "Exporting %s from Wordpress SVN" % (plugin_name)
-        self._run_command(['svn', 'export', svn_url, self.tmp_dir+'/'+plugin_name ])
-        for obj in os.listdir( self.tmp_dir+'/'+plugin_name ):
-            shutil.move( '/'.join([self.tmp_dir, plugin_name, obj]), self.target_location )
-        
-
-    """
-    Installs from a remote SVN or GIT repository with a properly
-    formatted location string
-    """
-    def _install_remote(self, location_string=None):
-        parts = location_string[4:].split('#')
-        if location_string[:3] == 'git':
-            self._generic_git_install(parts[0], parts[1])
-        elif location_string[:3] == 'svn':
-            self._generic_svn_install(parts[0], parts[1])
-        else:
-            print "Invalid protocol %s."
-            return False
-    
-    """
-    Exports from the trunk of an svn repository
-    """        
-    def _generic_svn_install(self, url=None, name=None):
-        print "Exporting %s from %s" % (name, url)
-        assert False, self.target_location
-        self._run_command(['svn','export', url, self.target_location ])
-        
-    """
-    Clones a git repository
-    """        
-    def _generic_git_install(self, url=None, name=None):
-        print "Cloning %s from %s" % (name, url)
-        self._run_command(['git','clone', self.target_location])
-    
-    """
-    Runs a command
-    """        
-    def _run_command(self, cmd_list):
-        print ' '.join(cmd_list)
-        proc = subprocess.Popen(cmd_list,stdout=subprocess.PIPE)
-        for line in proc.stdout:
-            if line is not "\r\n": print line
-
-    """
-    Writes new security keys to the wp-config.php file
-    """
-    def _set_security_keys(self, config_file = None):
-        
-        if not config_file:
-            return
-        
-        print "Generating new security keys"
-
-        try:
-            keys = urllib2.urlopen('https://api.wordpress.org/secret-key/1.1/salt/').readlines()
-        except:
-            print "Couldn't generate security keys from WordPress API. You'll have to set them yourself."
-            return;
-        
-        config_file = open(self.target_location+'/wp-config.php','r+')
-        lines = config_file.readlines()
-               
-        for i in range(len(lines)):
-            for key in keys:
-                match = re.findall("^define\('(.*)',", key)
-                if match is not None and match[0] in lines[i]:
-                    lines[i] = key
-        
-        config_file.seek(0)
-        config_file.writelines(lines)
+        installer = DBInstaller( arguments=self.args, options=self.options )
+        installer.install()
+        print "\nPlugins updated."
 
 
     """
@@ -292,23 +118,42 @@ class WPM(object):
     """        
     def setup(self):
 
-        print "Creating .wpm directory"
+        print "Installing WPM"
+        installer = DBInstaller( arguments=self.args, options=self.options )
+        installer.install()
+        print "\nInstallation complete"
 
-        try:
-            os.mkdir(os.path.expanduser('~/.wpm'))
-        except OSError:
-            print ".wpm directory already exists."
+    """
+    Decides which protocol to use to install the plugin
+    """
+    def _route_install(self, line):
+
+        if line == '' or line[:1] == '#':
+            return
+
+        parsed = re.compile('(?P<protocol>git|svn|zip)\+(?P<url>.*)#egg=(?P<name>.*)').search(line.strip())
+
+        params = {
+            'arguments': self.args,
+            'options': self.options,
+            'url': parsed.group('url') if parsed is not None else '' ,
+            'plugin_name': parsed.group('name') if parsed is not None else ''
+        }
+
+        if parsed is None:
+            params['plugin_name'] = line.strip()
+            Installer = self._get_installer()
         else:
-            print "Couldn't create .wpm directory. Exiting."
+            Installer = self._get_installer( protocol=parsed.group('protocol') )
 
-        if not os.path.exists(self.plugin_db_path):
-            file = open(self.plugin_db_path, 'w')
-            file.write('')
-            file.close()        
-   
-        self.update()
+        instance = Installer( **params )
+        instance.install()
+
+        print "Installed " + params['plugin_name']
+
         
-        print "Finished setup"
+    def _get_installer(self, protocol='WP'):
+        return getattr( installers, "%sInstaller" % protocol.upper() )
         
 
 if __name__ == '__main__':
