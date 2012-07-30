@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 from optparse import OptionParser
-from lib import installers
+from wordpresspm import installers
 import sys, os, re, zipfile, shutil, urllib2, urllib, subprocess, re, tempfile, urlparse
 
 
@@ -16,7 +16,7 @@ class WPM(object):
         self.options, self.args = self.parser.parse_args()
         
         try:
-            getattr(self,self.args[0])()
+                getattr(self,self.args[0])()
         except IndexError:
             print "Please specify a command."
             return

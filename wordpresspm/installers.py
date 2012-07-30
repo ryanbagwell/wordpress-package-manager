@@ -133,7 +133,7 @@ class BaseInstaller(object):
     def move_tmp(self, plugin_name):
 
         try:
-            os.rename( os.path.join(self.tmp_dir, plugin_name), os.path.join(self.target_location, plugin_name))
+            os.system('mv %s %s' % (os.path.join(self.tmp_dir, plugin_name), os.path.join(self.target_location, plugin_name) ))
         except OSError:
             print "Plugin %s already exists. Please remove it first." % plugin_name
             

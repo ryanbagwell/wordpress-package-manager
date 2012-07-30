@@ -3,14 +3,14 @@ from distutils.core import setup
 from distutils.command.install_data import install_data
 
 setup(name='Wordpress-Package-Manager',
-      version='0.7',
+      version='0.7.3',
       description='A command-line tool for installing WordPress plugins',
       long_description="A command-line tool for installing WordPress plugins in a manner similar to PIP.",
       author='Ryan Bagwell',
       author_email='ryan@ryanbagwell.com',
       url='https://github.com/ryanbagwell',
       scripts=['wpm', ],
-      py_modules=['wordpress-package-manager.installers', ],
+      py_modules=['wordpresspm.installers', ],
       classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
