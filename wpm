@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 from optparse import OptionParser
-from wordpresspm.installers import *
+from wordpresspm import installers
 import sys, os, re, zipfile, shutil, urllib2, urllib, subprocess, re, tempfile, urlparse
 
 
@@ -108,7 +108,7 @@ class WPM(object):
     def update(self):
         
         print "Getting plugins list"
-        installer = DBInstaller( arguments=self.args, options=self.options )
+        installer = installers.DBInstaller( arguments=self.args, options=self.options )
         installer.install()
         print "\nPlugins updated."
 
@@ -119,7 +119,7 @@ class WPM(object):
     def setup(self):
 
         print "Installing WPM"
-        installer = DBInstaller( arguments=self.args, options=self.options )
+        installer = installers.DBInstaller( arguments=self.args, options=self.options )
         installer.install()
         print "\nInstallation complete"
 
