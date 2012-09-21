@@ -16,7 +16,7 @@ class WPM(object):
         self.options, self.args = self.parser.parse_args()
         
         try:
-                getattr(self,self.args[0])()
+            getattr(self,self.args[0])()
         except IndexError:
             print "Please specify a command."
             return

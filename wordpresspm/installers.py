@@ -3,7 +3,8 @@ from optparse import OptionParser
 import sys, os, re, zipfile, shutil, urllib2, urllib, subprocess, re, tempfile, urlparse
 
 class BaseInstaller(object):
-    plugin_db_path = os.path.expanduser('~/.wpm/available_plugins')
+    wpm_meta_path = os.path.expanduser('~/.wpm/')
+    plugin_db_path = os.path.join(wpm_meta_path, 'available_plugins')
     tmp_dir = tempfile.mkdtemp()
     plugins_svn = "http://plugins.svn.wordpress.org"
  
@@ -84,7 +85,12 @@ class BaseInstaller(object):
     Checks to see if the plugin is in our list of plugins
     """
     def is_plugin(self, plugin_name):
-        file = open( self.plugin_db_path, 'r')
+
+        try:
+            file = open( self.plugin_db_path, 'w+')
+        except IOError:
+            print "Couldn't open plugin database. Do you need to run wpm setup first?"
+            return False
 
         for line in file.readlines():
             if line.strip() == plugin_name: return True
@@ -211,14 +217,21 @@ class WPInstaller(BaseInstaller):
         
         self.move_tmp( self.plugin_name )
         
-
+"""
+Creates the wpm meta directory, and downlods the list of available plugins.
+"""
 class DBInstaller(BaseInstaller):
 
     def install(self):
 
         data = self.download_data(self.plugins_svn)
         
-        local = open(self.plugin_db_path, 'r+')
+        try:
+            os.mkdir(self.wpm_meta_path)
+        except OSError:
+            print "WPM meta directory already exists (%s). Continuing"
+        
+        local = open(self.plugin_db_path, 'w+')
                 
         existing_contents = list(local.read())
         
@@ -227,7 +240,7 @@ class DBInstaller(BaseInstaller):
         local.seek(0)
         local.write("\r\n".join(plugins))
         
-        local.close()     
+        local.close()
             
 
 
