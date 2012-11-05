@@ -1,6 +1,8 @@
 #! /usr/bin/env python
-from optparse import OptionParser
+import argparse
+import os
 from wordpresspm import installers
+from wordpresspm.installers import *
 import sys, os, re, zipfile, shutil, urllib2, urllib, subprocess, re, tempfile, urlparse
 
 
@@ -8,77 +10,93 @@ class WPM(object):
     wp_latest = "http://wordpress.org/latest.zip"
 
     def __init__(self):
-        self.parser = OptionParser()
-        self.parser.usage = "wpm installframwork|install|search|update <plugin name> <location> [options]"
-    
-    def main(self):
-        self.set_options()
-        self.options, self.args = self.parser.parse_args()
         
-        try:
-            getattr(self,self.args[0])()
-        except IndexError:
-            print "Please specify a command."
-            return
-        except AttributeError:
-            print "Invalid Command. Usage: %s" % self.parser.usage
-            return
+        parser = argparse.ArgumentParser(prog="wpm",
+            description='A comand line tool to handle WordPress framework and plugin installation')
+        
+        subparsers = parser.add_subparsers(title="Available commands")
+        
+        install_framework_parser = subparsers.add_parser('installframework', 
+            help="Install the latest version of WordPress")
 
-        print "Installation Complete."
-    
-    def set_options(self):
-        self.parser.add_option("-r", "--requirements", metavar="FILE", help="The location of the requirements file",)
+        install_framework_parser.add_argument('location', 
+            help="Specify the target location.", 
+            default=os.getcwd())
+
+        install_framework_parser.add_argument('-o', '--overwrite', 
+            action='store_true',
+            help="Overwrite the previous installation of WordPress", 
+            default=False)
+        
+        install_framework_parser.set_defaults(func=self.install_framework)
+            
+        install_plugin_parser = subparsers.add_parser('installplugin', 
+            help="Install a WordPress plugin")
+            
+        install_plugin_parser.add_argument('plugin',
+            help="The plugin name",
+            nargs='?',
+            default=None)
+
+        install_plugin_parser.add_argument('-l', '--location', 
+            help="Specify the target location.",
+            default=os.getcwd())
+
+        install_plugin_parser.add_argument('-o', '--overwrite', 
+            action='store_true',
+            help="Overwrite the previous installation of WordPress", 
+            default=False)
+            
+        install_plugin_parser.add_argument('-r', '--requirements', 
+            help="Use a requirements file", 
+            default=False)
+            
+        install_plugin_parser.set_defaults(func=self.install_plugin)
+
+        self.args = parser.parse_args()
+        self.args.func(self.args)
 
 
     """
     Downloads and installs the WordPress framework.
     """        
-    def installframework(self):
+    def install_framework(self, parser, *args, **kwargs):
         
-        print "Installing WordPress framework"
-                
-        installer = self._get_installer( protocol="ZIP")
-        installer = installer( arguments=self.args, options=self.options, url=self.wp_latest )
+        installer = ZIPInstaller(url=self.wp_latest, 
+            target_location=self.args.location, overwrite = self.args.overwrite)
 
-        if os.path.exists( os.path.join(installer.target_location,'wp-config.php')):
-            answer = raw_input("It looks like WordPress has already been installed in this directory. Should I overwrite? (y/n):")
-        else:
-            answer = 'y'
-
-        if answer != 'y':
-            sys.exit("Aborting WordPress installation.")
-              
-        installer.install()
+        if installer.install() is False: return False
         
-        for obj in os.listdir(os.path.join(installer.target_location,'wordpress')):
-            src = os.path.join(installer.target_location,'wordpress', obj)
-            dest = os.path.join(installer.target_location,'wordpress', '../', obj)
-            shutil.move(src, dest)
-         
-        shutil.move(os.path.join(installer.target_location,'wp-config-sample.php'), os.path.join(installer.target_location,'wp-config.php'))
-    
-        os.rmdir(os.path.join(installer.target_location,'wordpress'))
-        
-        installer.set_security_keys(os.path.join(installer.target_location,'wp-config.php'))
-
-        print "Done"
-        
+        try:
+            shutil.move(os.path.join(installer.target_location, 'wp-config-sample.php'), 
+                os.path.join(installer.target_location,'wp-config.php'))
+            installer.set_security_keys(
+                    os.path.join(installer.target_location,'wp-config.php'))              
+        except:
+            print "Error while trying to add security keys to wp-config.php"
+            
+        print "Installed WordPress"
 
     """
     Installs a plugin
     """        
-    def install(self):
-        plugin_name = self.args[1]
-                
-        if self.options.__dict__.get('requirements',None) is not None:
-            file = open(self.options.__dict__.get('requirements'), 'r')
+    def install_plugin(self, parser, *args, **kwargs):
+        
+        if self.args.plugin is None and self.args.requirements is False:
+            return
+        
+        print self.args.requirements
+        
+        if self.args.requirements:
+            
+            file = open(os.path.abspath(self.args.requirements), 'r')
             requirements = file.readlines()
             file.close()
             
             for line in requirements:
-                self._route_install( line )
+                self._route_install(line)
         else:            
-            self._route_install(plugin_name)
+            self._route_install(self.args.plugin)
 
 
     """
@@ -135,11 +153,12 @@ class WPM(object):
 
         params = {
             'arguments': self.args,
-            'options': self.options,
             'url': parsed.group('url') if parsed is not None else '' ,
-            'plugin_name': parsed.group('name') if parsed is not None else ''
+            'plugin_name': parsed.group('name') if parsed is not None else '',
+            'target_location': self.args.location,
+            'overwrite': self.args.overwrite,
         }
-
+        
         if parsed is None:
             params['plugin_name'] = line.strip()
             Installer = self._get_installer()
@@ -150,12 +169,10 @@ class WPM(object):
         instance.install()
 
         print "Installed " + params['plugin_name']
-
         
     def _get_installer(self, protocol='WP'):
-        return getattr( installers, "%sInstaller" % protocol.upper() )
+        return getattr( installers, "%sInstaller" % protocol.upper() )        
         
 
 if __name__ == '__main__':
-    wpm = WPM()
-    wpm.main()
+    WPM()
