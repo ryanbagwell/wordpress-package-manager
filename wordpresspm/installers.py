@@ -1,8 +1,6 @@
 #! /usr/bin/env python
-from optparse import OptionParser
-import sys, os, re, zipfile, shutil, urllib2, urllib, subprocess, re, tempfile, urlparse, requests
+import sys, os, re, zipfile, shutil, urllib2, urllib, subprocess, re, tempfile, urlparse
 from progressbar import ProgressBar, Percentage, Bar, FormatLabel
-from asynchttp import Http
 import subprocess
 
 class BaseInstaller(object):

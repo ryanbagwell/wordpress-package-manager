@@ -22,4 +22,8 @@ setup(name='Wordpress-Package-Manager',
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: Microsoft :: Windows',
       ],
+      install_requires=[
+        "argparse==1.2.1",
+        "-e hg+https://code.google.com/p/python-progressbar/#egg=progressbar"
+      ],
      )

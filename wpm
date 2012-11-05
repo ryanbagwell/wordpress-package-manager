@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 import argparse
 import os
+import sys, os, re, zipfile, shutil, urllib2, urllib, subprocess, re, tempfile, urlparse
 from wordpresspm import installers
 from wordpresspm.installers import *
-import sys, os, re, zipfile, shutil, urllib2, urllib, subprocess, re, tempfile, urlparse
 
 
 class WPM(object):
