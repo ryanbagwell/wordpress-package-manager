@@ -19,10 +19,8 @@ class BaseInstaller(object):
     Common method to download a file from a given url
     """        
     def download_file(self, url):
-        file = self.download_data(url)
-        renamed = os.path.join(os.path.dirname(file), url.split('/')[-1])
-        os.rename(file, renamed)
-        return renamed
+        path = self.download_data(url)
+        return path
 
 
     def download_data(self, url):
@@ -103,7 +101,7 @@ class BaseInstaller(object):
         except:
             pass
             
-        os.rename(src, dest)
+        shutil.move(src, dest)
         
 
 class ZIPInstaller(BaseInstaller):
