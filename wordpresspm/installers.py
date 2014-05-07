@@ -160,6 +160,21 @@ class WPInstaller(BaseInstaller):
         self.run_command(['svn', 'export', svn_url,
             os.path.join(self.target_location, self.plugin_name)])
 
+
+class FrameworkInstaller(ZIPInstaller):
+    """ Downlads and installs the WP framework """
+
+    def install(self):
+
+        file = self.download_file(self.url)
+
+        extracted_files = self.extract(file)
+
+        self.move_tmp(os.path.join(self.tmp_dir, 'wordpress'), self.target_location)
+
+        return True
+
+
 """
 Creates the wpm meta directory, and downlods the list of available plugins.
 """

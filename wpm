@@ -62,7 +62,7 @@ class WPM(object):
     """
     def install_framework(self, parser, *args, **kwargs):
 
-        installer = ZIPInstaller(url=self.wp_latest,
+        installer = FrameworkInstaller(url=self.wp_latest,
             target_location=self.args.location, overwrite = self.args.overwrite)
 
         if installer.install() is False: return False
