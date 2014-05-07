@@ -9,6 +9,7 @@ class BaseInstaller(object):
     tmp_dir = tempfile.mkdtemp()
     plugins_svn = "http://plugins.svn.wordpress.org"
     target_location = None
+    plugin_name = ''
 
     def __init__(self, *args, **kwargs):
 
