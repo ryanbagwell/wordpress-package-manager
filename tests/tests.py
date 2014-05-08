@@ -68,7 +68,7 @@ class WordpressPMTests(unittest.TestCase):
         cmd = ' '.join([
             self.wpm_path,
             'installplugin',
-            'zip+http://www3.formassembly.com/plugins/wordpress/wp_formassembly.zip#name=form-assembly',
+            'git+git@github.com:ryanbagwell/wordpress-sentry.git#name=wordpress-sentry',
             '-l',
             '%s/public/wp-content/plugins/' % self.test_dir,
             ])
@@ -76,8 +76,8 @@ class WordpressPMTests(unittest.TestCase):
         subprocess.call(cmd, shell=True)
 
         self.assertTrue(os.path.exists(
-            os.path.join(self.test_dir, 'public/wp-content/plugins/form-assembly/wp_formassembly.php')),
-            msg="wp_formassembly.php not found.")
+            os.path.join(self.test_dir, 'public/wp-content/plugins/wordpress-sentry/wordpress-sentry.php')),
+            msg="wordpress-sentry.php not found.")
 
 
 
