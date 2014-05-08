@@ -18,12 +18,12 @@ class WordpressPMTests(unittest.TestCase):
 
         os.makedirs(os.path.join(self.test_dir))
 
-    # @classmethod
-    # def tearDownClass(self):
-    #     try:
-    #         shutil.rmtree(self.test_dir)
-    #     except:
-    #         pass
+    @classmethod
+    def tearDownClass(self):
+        try:
+            shutil.rmtree(self.test_dir)
+        except:
+            pass
 
     def test_install_framework(self):
 
