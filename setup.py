@@ -10,7 +10,7 @@ setup(name='Wordpress-Package-Manager',
       author_email='ryan@ryanbagwell.com',
       url='https://github.com/ryanbagwell',
       py_modules=['wordpresspm.installers', 'wordpresspm.wpm'],
-      scripts=['bin/wpm'],
+      scripts=['wordpresspm/wpm'],
       classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
