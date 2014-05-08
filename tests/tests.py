@@ -8,7 +8,8 @@ class WordpressPMTests(unittest.TestCase):
     wpm_path = os.path.join(os.path.dirname(__file__), '../wpm')
     test_dir = os.path.join(os.path.dirname(__file__), '..', '_test')
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
 
         try:
             shutil.rmtree(self.test_dir)
@@ -17,14 +18,15 @@ class WordpressPMTests(unittest.TestCase):
 
         os.makedirs(os.path.join(self.test_dir))
 
-    def tearDown(self):
-
-        try:
-            shutil.rmtree(self.test_dir)
-        except:
-            pass
+    # @classmethod
+    # def tearDownClass(self):
+    #     try:
+    #         shutil.rmtree(self.test_dir)
+    #     except:
+    #         pass
 
     def test_install_framework(self):
+
         """ Download and upack the latest wordpress framework """
         subprocess.call("%s installframework %s/public" %
                         (self.wpm_path, self.test_dir), shell=True)
@@ -33,6 +35,62 @@ class WordpressPMTests(unittest.TestCase):
         self.assertTrue(os.path.exists(
             os.path.join(self.test_dir, 'public', 'wp-config.php')),
             msg="wp-config.php not found.")
+
+    def test_install_plugin(self):
+
+        subprocess.call("%s installplugin w3-total-cache -l %s/public/wp-content/plugins/" %
+            (self.wpm_path, self.test_dir), shell=True)
+
+        self.assertTrue(os.path.exists(
+            os.path.join(self.test_dir, 'public/wp-content/plugins/w3-total-cache/w3-total-cache.php')),
+            msg="w3-total-cache.php not found.")
+
+
+    def test_install_plugin_from_zip(self):
+
+        cmd = ' '.join([
+            self.wpm_path,
+            'installplugin',
+            'zip+http://www3.formassembly.com/plugins/wordpress/wp_formassembly.zip#name=form-assembly',
+            '-l',
+            '%s/public/wp-content/plugins/' % self.test_dir,
+            ])
+
+        subprocess.call(cmd, shell=True)
+
+        self.assertTrue(os.path.exists(
+            os.path.join(self.test_dir, 'public/wp-content/plugins/form-assembly/wp_formassembly.php')),
+            msg="wp_formassembly.php not found.")
+
+
+    def test_install_plugin_from_git(self):
+
+        cmd = ' '.join([
+            self.wpm_path,
+            'installplugin',
+            'zip+http://www3.formassembly.com/plugins/wordpress/wp_formassembly.zip#name=form-assembly',
+            '-l',
+            '%s/public/wp-content/plugins/' % self.test_dir,
+            ])
+
+        subprocess.call(cmd, shell=True)
+
+        self.assertTrue(os.path.exists(
+            os.path.join(self.test_dir, 'public/wp-content/plugins/form-assembly/wp_formassembly.php')),
+            msg="wp_formassembly.php not found.")
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
