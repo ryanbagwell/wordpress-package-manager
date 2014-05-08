@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import os
+import sys
 import re
 import zipfile
 import shutil
@@ -26,33 +27,31 @@ class BaseInstaller(object):
     def download_file(self, url):
         """ Common method to download a file from a given url """
 
+        print 'Fetching %s' % url
+
         temp = tempfile.mkstemp()
 
         urllib.urlretrieve(url, temp[1])
 
         return temp[1]
 
-
-    """
-    Unzip a plugin in .zip format
-    """
-
     def extract(self, file):
-        print "\r\nUnzipping ..."
+        """ Extract the contents of a zip file """
+
+        print "Unzipping %s" % file
+
         z = zipfile.ZipFile(file)
+
         z.extractall(self.tmp_dir)
+
         return z.namelist()
 
-        # return os.path.join(self.tmp_dir, z.namelist())
-
-    """
-    Writes new security keys to the wp-config.php file
-    """
 
     def set_security_keys(self, config_file=None):
+        """ Generates new security keys and writes them
+            to the wp-config.php file """
 
-        if not config_file:
-            return
+        if not config_file: return
 
         print "Generating new security keys"
 
@@ -64,6 +63,7 @@ class BaseInstaller(object):
             return
 
         config_file = open(self.target_location + '/wp-config.php', 'r+')
+
         lines = config_file.readlines()
 
         for i in range(len(lines)):
@@ -73,23 +73,21 @@ class BaseInstaller(object):
                     lines[i] = key
 
         config_file.seek(0)
+
         config_file.writelines(lines)
 
-    """
-    Runs a command
-    """
-
     def run_command(self, cmd_list):
+        """ Runs a shell command command """
+
         proc = subprocess.Popen(cmd_list, stdout=subprocess.PIPE)
+
         for line in proc.stdout:
             if line is not "\r\n":
                 print line
 
-    """
-    Moves the tmp install to the specified plugin location
-    """
-
     def move_tmp(self, src, dest):
+        """ Renames the tmp installation dir to the
+            specified destination """
 
         if os.path.exists(os.path.abspath(dest)) and not self.overwrite:
             print "Installation already exists"
@@ -102,19 +100,25 @@ class BaseInstaller(object):
 
         shutil.move(src, dest)
 
+    def install(self):
+
+        if os.path.exists(os.path.join(self.target_location, self.plugin_name)) and not self.overwrite:
+            sys.exit("Target location exists. Aborting.")
+
+
 
 class ZIPInstaller(BaseInstaller):
-
-    def __init__(self, *args, **kwargs):
-        super(ZIPInstaller, self).__init__(*args, **kwargs)
+    """ Downloads, unpacks and relocates
+        a remote zip file """
 
     def install(self):
+        super(ZIPInstaller, self).install()
 
         target_location = os.path.join(self.target_location, self.plugin_name)
 
         file = self.download_file(self.url)
 
-        extracted_files = self.extract(file)
+        self.extract(file)
 
         self.move_tmp(self.tmp_dir, target_location)
 
@@ -122,59 +126,53 @@ class ZIPInstaller(BaseInstaller):
 
 
 class GITInstaller(BaseInstaller):
-
-    """
-    Clones a git repository
-    """
+    """ Clones a git repository """
 
     def install(self):
+        super(GITInstaller, self).install()
+
         print "Cloning %s from %s" % (self.plugin_name, self.url)
+
         self.run_command(
             ['git', 'clone', self.url, os.path.join(self.target_location, self.plugin_name)])
 
 
-"""
-Exports from the trunk of an svn repository
-"""
-
-
 class SVNInstaller(BaseInstaller):
+    """ Exports from the trunk of an svn repository """
 
     def install(self):
-        print "Exporting %s from %s" % (self.plugin_name, self.svn_url)
-        self._run_command(['svn', 'export', url, self.target_location])
+        super(SVNInstaller, self).install()
 
-"""
-Download and extract the specified plugin from the
-official WordPress plugin repository
-"""
+        print "Exporting %s from %s" % (self.plugin_name, self.svn_url)
+
+        self._run_command(['svn', 'export', self.url, self.target_location])
 
 
 class WPInstaller(BaseInstaller):
+    """ Download and extract the specified plugin from the
+        official WordPress SVN plugin repository """
 
     def install(self):
+        super(WPInstaller, self).install()
 
-        if os.path.exists(
-                os.path.join(self.target_location, self.plugin_name)) and not self.overwrite:
-            print "Target location exists. Aborting"
-            return
-
+        """ Build the url to the svn repo """
         svn_url = '/'.join([self.plugins_svn,
                             self.plugin_name.replace("\n", ''), 'trunk'])
+
         print "Exporting %s from Wordpress SVN" % (self.plugin_name)
+
         self.run_command(['svn', 'export', svn_url,
                           os.path.join(self.target_location, self.plugin_name)])
 
 
 class FrameworkInstaller(ZIPInstaller):
-
     """ Downlads and installs the WP framework """
 
     def install(self):
 
         file = self.download_file(self.url)
 
-        extracted_files = self.extract(file)
+        self.extract(file)
 
         self.move_tmp(
             os.path.join(self.tmp_dir, 'wordpress'), self.target_location)
