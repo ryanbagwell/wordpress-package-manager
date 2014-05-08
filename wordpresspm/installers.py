@@ -10,7 +10,6 @@ import tempfile
 import urllib
 
 
-
 class BaseInstaller(object):
     wpm_meta_path = os.path.expanduser('~/.wpm/')
     plugin_db_path = os.path.join(wpm_meta_path, 'available_plugins')
@@ -164,7 +163,6 @@ class WPInstaller(BaseInstaller):
         self.run_command(['svn', 'export', svn_url,
                           os.path.join(self.target_location, self.plugin_name)])
 
-
 class FrameworkInstaller(ZIPInstaller):
     """ Downlads and installs the WP framework """
 
@@ -180,12 +178,9 @@ class FrameworkInstaller(ZIPInstaller):
         return True
 
 
-"""
-Creates the wpm meta directory, and downlods the list of available plugins.
-"""
-
-
 class DBInstaller(BaseInstaller):
+    """ Creates the wpm meta directory,
+        and downlods the list of available plugins. """
 
     def install(self):
 
@@ -198,7 +193,7 @@ class DBInstaller(BaseInstaller):
 
         local = open(self.plugin_db_path, 'w+')
 
-        existing_contents = list(local.read())
+        list(local.read())
 
         plugins = re.findall('">(.*)/</a>', data)
 
