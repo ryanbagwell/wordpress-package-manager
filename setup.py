@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from distutils.core import setup
 from distutils.command.install_data import install_data
+from Cython.Build import cythonize
 
 setup(name='Wordpress-Package-Manager',
       version='0.7.7',

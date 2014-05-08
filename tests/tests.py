@@ -5,7 +5,7 @@ import os
 
 
 class WordpressPMTests(unittest.TestCase):
-    wpm_path = os.path.join(os.path.dirname(__file__), '../wpm')
+    wpm_path = os.path.join(os.path.dirname(__file__), '../wordpresspm/wpm.py')
     test_dir = os.path.join(os.path.dirname(__file__), '..', '_test')
 
     @classmethod
@@ -28,7 +28,7 @@ class WordpressPMTests(unittest.TestCase):
     def test_install_framework(self):
 
         """ Download and upack the latest wordpress framework """
-        subprocess.call("%s installframework %s/public" %
+        subprocess.call("python %s installframework %s/public" %
                         (self.wpm_path, self.test_dir), shell=True)
 
         """ Check that it's in the correct location """
@@ -38,7 +38,7 @@ class WordpressPMTests(unittest.TestCase):
 
     def test_install_plugin(self):
 
-        subprocess.call("%s installplugin w3-total-cache -l %s/public/wp-content/plugins/" %
+        subprocess.call("python %s installplugin w3-total-cache -l %s/public/wp-content/plugins/" %
             (self.wpm_path, self.test_dir), shell=True)
 
         self.assertTrue(os.path.exists(
@@ -49,6 +49,7 @@ class WordpressPMTests(unittest.TestCase):
     def test_install_plugin_from_zip(self):
 
         cmd = ' '.join([
+            'python',
             self.wpm_path,
             'installplugin',
             'zip+http://www3.formassembly.com/plugins/wordpress/wp_formassembly.zip#name=form-assembly',
@@ -66,6 +67,7 @@ class WordpressPMTests(unittest.TestCase):
     def test_install_plugin_from_git(self):
 
         cmd = ' '.join([
+            'python',
             self.wpm_path,
             'installplugin',
             'git+git@github.com:ryanbagwell/wordpress-sentry.git#name=wordpress-sentry',

@@ -4,8 +4,7 @@ import os
 import sys
 import re
 import shutil
-from wordpresspm import installers
-from wordpresspm.installers import *
+import installers
 
 
 class WPM(object):
@@ -64,7 +63,7 @@ class WPM(object):
 
     def install_framework(self, parser, *args, **kwargs):
 
-        installer = FrameworkInstaller(url=self.wp_latest,
+        installer = installers.FrameworkInstaller(url=self.wp_latest,
                                        target_location=self.args.location, overwrite=self.args.overwrite)
 
         if installer.install() is False:
