@@ -6,7 +6,8 @@ import shutil
 import urllib2
 import subprocess
 import tempfile
-from progressbar import ProgressBar, Percentage, Bar, FormatLabel
+import urllib
+
 
 
 class BaseInstaller(object):
@@ -22,29 +23,15 @@ class BaseInstaller(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    """
-    Common method to download a file from a given url
-    """
-
     def download_file(self, url):
-        return self.download_data(url)
-
-    def download_data(self, url):
-
-        pbar = ProgressBar(widgets=[FormatLabel('Downloading'), Percentage(), Bar()],
-                           maxval=9000000).start()
+        """ Common method to download a file from a given url """
 
         temp = tempfile.mkstemp()
 
-        p = subprocess.Popen(['wget', '-O', temp[1], url], stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-
-        while p.poll() != 0:
-            pbar.update(os.stat(temp[1]).st_size)
-
-        pbar.finish()
+        urllib.urlretrieve(url, temp[1])
 
         return temp[1]
+
 
     """
     Unzip a plugin in .zip format
@@ -204,7 +191,7 @@ class DBInstaller(BaseInstaller):
 
     def install(self):
 
-        data = self.download_data(self.plugins_svn)
+        data = self.download_file(self.plugins_svn)
 
         try:
             os.mkdir(self.wpm_meta_path)
