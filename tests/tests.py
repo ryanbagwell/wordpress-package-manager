@@ -5,7 +5,7 @@ import os
 
 
 class WordpressPMTests(unittest.TestCase):
-    wpm_path = os.path.join(os.path.dirname(__file__), '../wordpresspm/wpm.py')
+    wpm_path = os.path.join(os.path.dirname(__file__), '../wordpresspm/wpm')
     test_dir = os.path.join(os.path.dirname(__file__), '..', '_test')
 
     @classmethod
@@ -80,18 +80,6 @@ class WordpressPMTests(unittest.TestCase):
         self.assertTrue(os.path.exists(
             os.path.join(self.test_dir, 'public/wp-content/plugins/wordpress-sentry/wordpress-sentry.php')),
             msg="wordpress-sentry.php not found.")
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
