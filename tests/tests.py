@@ -82,6 +82,38 @@ class WordpressPMTests(unittest.TestCase):
             msg="wordpress-sentry.php not found.")
 
 
+    def test_install_plugins_from_requirements_file(self):
+
+        shutil.rmtree(os.path.join(self.test_dir, 'public', 'wp-content', 'plugins'))
+
+        cmd = ' '.join([
+            'python',
+            self.wpm_path,
+            'installplugin',
+            '-r',
+            'requirements.wpm',
+            '-l',
+            '%s/public/wp-content/plugins/' % self.test_dir,
+        ])
+
+        subprocess.call(cmd, shell=True)
+
+        self.assertTrue(os.path.exists(
+            os.path.join(self.test_dir, 'public/wp-content/plugins/wordpress-sentry/wordpress-sentry.php')),
+            msg="wordpress-sentry.php not found.")
+
+        self.assertTrue(os.path.exists(
+            os.path.join(self.test_dir, 'public/wp-content/plugins/form-assembly/wp_formassembly.php')),
+            msg="wp_formassembly.php not found.")
+
+        self.assertTrue(os.path.exists(
+            os.path.join(self.test_dir, 'public/wp-content/plugins/w3-total-cache/w3-total-cache.php')),
+            msg="w3-total-cache.php not found.")
+
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

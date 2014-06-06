@@ -1,0 +1,3 @@
+git+git@github.com:ryanbagwell/wordpress-sentry.git#name=wordpress-sentry
+zip+http://www3.formassembly.com/plugins/wordpress/wp_formassembly.zip#name=form-assembly
+w3-total-cache
