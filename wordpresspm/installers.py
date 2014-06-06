@@ -45,12 +45,12 @@ class BaseInstaller(object):
 
         return z.namelist()
 
-
     def set_security_keys(self, config_file=None):
         """ Generates new security keys and writes them
             to the wp-config.php file """
 
-        if not config_file: return
+        if not config_file:
+            return
 
         print "Generating new security keys"
 
@@ -102,16 +102,22 @@ class BaseInstaller(object):
     def install(self):
 
         if os.path.exists(os.path.join(self.target_location, self.plugin_name)) and not self.overwrite:
-            sys.exit("Target location exists. Aborting.")
+            print "Target location for %s exists. Aborting." % self.plugin_name
+            return False
 
+        return True
 
 
 class ZIPInstaller(BaseInstaller):
+
     """ Downloads, unpacks and relocates
         a remote zip file """
 
     def install(self):
-        super(ZIPInstaller, self).install()
+        _continue = super(ZIPInstaller, self).install()
+
+        if _continue is False:
+            return
 
         target_location = os.path.join(self.target_location, self.plugin_name)
 
@@ -125,10 +131,14 @@ class ZIPInstaller(BaseInstaller):
 
 
 class GITInstaller(BaseInstaller):
+
     """ Clones a git repository """
 
     def install(self):
-        super(GITInstaller, self).install()
+        _continue = super(GITInstaller, self).install()
+
+        if _continue is False:
+            return
 
         print "Cloning %s from %s" % (self.plugin_name, self.url)
 
@@ -137,10 +147,14 @@ class GITInstaller(BaseInstaller):
 
 
 class SVNInstaller(BaseInstaller):
+
     """ Exports from the trunk of an svn repository """
 
     def install(self):
-        super(SVNInstaller, self).install()
+        _continue = super(SVNInstaller, self).install()
+
+        if _continue is False:
+            return
 
         print "Exporting %s from %s" % (self.plugin_name, self.svn_url)
 
@@ -148,6 +162,7 @@ class SVNInstaller(BaseInstaller):
 
 
 class WPInstaller(BaseInstaller):
+
     """ Download and extract the specified plugin from the
         official WordPress SVN plugin repository """
 
@@ -163,7 +178,9 @@ class WPInstaller(BaseInstaller):
         self.run_command(['svn', 'export', svn_url,
                           os.path.join(self.target_location, self.plugin_name)])
 
+
 class FrameworkInstaller(ZIPInstaller):
+
     """ Downlads and installs the WP framework """
 
     def install(self):
@@ -179,6 +196,7 @@ class FrameworkInstaller(ZIPInstaller):
 
 
 class DBInstaller(BaseInstaller):
+
     """ Creates the wpm meta directory,
         and downlods the list of available plugins. """
 

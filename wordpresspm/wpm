@@ -64,14 +64,16 @@ class WPM(object):
     def install_framework(self, parser, *args, **kwargs):
 
         installer = installers.FrameworkInstaller(url=self.wp_latest,
-                                       target_location=self.args.location, overwrite=self.args.overwrite)
+                                                  target_location=self.args.location, overwrite=self.args.overwrite)
 
         if installer.install() is False:
             return False
 
         try:
-            shutil.move(os.path.join(installer.target_location, 'wp-config-sample.php'),
-                        os.path.join(installer.target_location, 'wp-config.php'))
+            shutil.move(
+                os.path.join(installer.target_location,
+                             'wp-config-sample.php'),
+                os.path.join(installer.target_location, 'wp-config.php'))
             installer.set_security_keys(
                 os.path.join(installer.target_location, 'wp-config.php'))
         except:
@@ -152,7 +154,7 @@ class WPM(object):
 
     def _route_install(self, line):
 
-        if line == '' or line[:1] == '#':
+        if line.strip() == '' or line[:1] == '#':
             return
 
         parsed = re.compile(

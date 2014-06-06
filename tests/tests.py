@@ -26,7 +26,6 @@ class WordpressPMTests(unittest.TestCase):
             pass
 
     def test_install_framework(self):
-
         """ Download and upack the latest wordpress framework """
         subprocess.call("python %s installframework %s/public" %
                         (self.wpm_path, self.test_dir), shell=True)
@@ -38,13 +37,14 @@ class WordpressPMTests(unittest.TestCase):
 
     def test_install_plugin(self):
 
-        subprocess.call("python %s installplugin w3-total-cache -l %s/public/wp-content/plugins/" %
+        subprocess.call(
+            "python %s installplugin w3-total-cache -l %s/public/wp-content/plugins/" %
             (self.wpm_path, self.test_dir), shell=True)
 
         self.assertTrue(os.path.exists(
-            os.path.join(self.test_dir, 'public/wp-content/plugins/w3-total-cache/w3-total-cache.php')),
+            os.path.join(
+                self.test_dir, 'public/wp-content/plugins/w3-total-cache/w3-total-cache.php')),
             msg="w3-total-cache.php not found.")
-
 
     def test_install_plugin_from_zip(self):
 
@@ -55,14 +55,14 @@ class WordpressPMTests(unittest.TestCase):
             'zip+http://www3.formassembly.com/plugins/wordpress/wp_formassembly.zip#name=form-assembly',
             '-l',
             '%s/public/wp-content/plugins/' % self.test_dir,
-            ])
+        ])
 
         subprocess.call(cmd, shell=True)
 
         self.assertTrue(os.path.exists(
-            os.path.join(self.test_dir, 'public/wp-content/plugins/form-assembly/wp_formassembly.php')),
+            os.path.join(
+                self.test_dir, 'public/wp-content/plugins/form-assembly/wp_formassembly.php')),
             msg="wp_formassembly.php not found.")
-
 
     def test_install_plugin_from_git(self):
 
@@ -73,46 +73,46 @@ class WordpressPMTests(unittest.TestCase):
             'git+git@github.com:ryanbagwell/wordpress-sentry.git#name=wordpress-sentry',
             '-l',
             '%s/public/wp-content/plugins/' % self.test_dir,
-            ])
+        ])
 
         subprocess.call(cmd, shell=True)
 
         self.assertTrue(os.path.exists(
-            os.path.join(self.test_dir, 'public/wp-content/plugins/wordpress-sentry/wordpress-sentry.php')),
+            os.path.join(
+                self.test_dir, 'public/wp-content/plugins/wordpress-sentry/wordpress-sentry.php')),
             msg="wordpress-sentry.php not found.")
-
 
     def test_install_plugins_from_requirements_file(self):
 
-        shutil.rmtree(os.path.join(self.test_dir, 'public', 'wp-content', 'plugins'))
+        shutil.rmtree(
+            os.path.join(self.test_dir, 'public', 'wp-content', 'plugins'))
 
         cmd = ' '.join([
             'python',
             self.wpm_path,
             'installplugin',
             '-r',
-            'requirements.wpm',
+            os.path.join(self.test_dir, '..', 'tests', 'requirements.wpm'),
             '-l',
-            '%s/public/wp-content/plugins/' % self.test_dir,
+            os.path.join(self.test_dir, 'public', 'wp-content', 'plugins'),
         ])
 
         subprocess.call(cmd, shell=True)
 
         self.assertTrue(os.path.exists(
-            os.path.join(self.test_dir, 'public/wp-content/plugins/wordpress-sentry/wordpress-sentry.php')),
+            os.path.join(
+                self.test_dir, 'public/wp-content/plugins/wordpress-sentry/wordpress-sentry.php')),
             msg="wordpress-sentry.php not found.")
 
         self.assertTrue(os.path.exists(
-            os.path.join(self.test_dir, 'public/wp-content/plugins/form-assembly/wp_formassembly.php')),
+            os.path.join(
+                self.test_dir, 'public/wp-content/plugins/form-assembly/wp_formassembly.php')),
             msg="wp_formassembly.php not found.")
 
         self.assertTrue(os.path.exists(
-            os.path.join(self.test_dir, 'public/wp-content/plugins/w3-total-cache/w3-total-cache.php')),
+            os.path.join(
+                self.test_dir, 'public/wp-content/plugins/w3-total-cache/w3-total-cache.php')),
             msg="w3-total-cache.php not found.")
-
-
-
-
 
 
 if __name__ == '__main__':
