@@ -4,7 +4,7 @@ import os
 import sys
 import re
 import shutil
-from wordpresspm import installers
+import installers
 
 
 class WPM(object):
@@ -157,29 +157,48 @@ class WPM(object):
         if line.strip() == '' or line[:1] == '#':
             return
 
-        parsed = re.compile(
-            '(?P<protocol>git|svn|zip)\+(?P<url>[^#]+)(?:#(?:name|egg)=(?P<name>.+))?').search(line.strip())
+        patterns = [
+            '(?P<name>.*?)==(?P<version>.*)',
+            '(?P<protocol>git|svn|zip)\+(?P<url>[^#]+)(?:#(?:name|egg)=(?P<name>.+))?',
+        ]
 
         params = {
             'arguments': self.args,
-            'url': parsed.group('url') if parsed is not None else '',
-            'plugin_name': parsed.group('name') if parsed is not None else '',
+            'url': None,
+            'plugin_name': None,
             'target_location': self.args.location,
             'overwrite': self.args.overwrite,
         }
 
-        if parsed is None:
-            params['plugin_name'] = line.strip()
-            Installer = self._get_installer()
-        else:
-            Installer = self._get_installer(protocol=parsed.group('protocol'))
+        for p in patterns:
 
-        instance = Installer(**params)
-        instance.install()
+            regex = re.compile(p)
 
-        print "Installed " + params['plugin_name']
+            parsed = regex.search(line.strip())
 
-    def _get_installer(self, protocol='WP'):
+            if parsed is None:
+                continue
+
+            params['plugin_name'] = parsed.groupdict().get('name')
+
+            params['url'] = parsed.groupdict().get('url') if parsed.groupdict().get(
+                'url', None) else 'http://downloads.wordpress.org/plugin/%s.%s.zip' % (parsed.group('name'), parsed.group('version'))
+
+            Installer = self._get_installer(
+                protocol=parsed.groupdict().get('protocol', None))
+
+            break
+
+        try:
+            instance = Installer(**params)
+            instance.install()
+            print "Installed " + params['plugin_name']
+        except:
+            print "Couldn't find installer for %s. Is your syntax correct?" % self.plugin_name
+
+    def _get_installer(self, protocol=None):
+        if protocol is None:
+            protocol = 'WPZIP'
         return getattr(installers, "%sInstaller" % protocol.upper())
 
 

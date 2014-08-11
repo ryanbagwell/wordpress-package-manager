@@ -38,13 +38,13 @@ class WordpressPMTests(unittest.TestCase):
     def test_install_plugin(self):
 
         subprocess.call(
-            "python %s installplugin w3-total-cache -l %s/public/wp-content/plugins/" %
+            "python %s installplugin cloudflare==1.3.14 -l %s/public/wp-content/plugins/" %
             (self.wpm_path, self.test_dir), shell=True)
 
         self.assertTrue(os.path.exists(
             os.path.join(
-                self.test_dir, 'public/wp-content/plugins/w3-total-cache/w3-total-cache.php')),
-            msg="w3-total-cache.php not found.")
+                self.test_dir, 'public/wp-content/plugins/cloudflare/cloudflare.php')),
+            msg="cloudflare.php not found.")
 
     def test_install_plugin_from_zip(self):
 
@@ -63,6 +63,7 @@ class WordpressPMTests(unittest.TestCase):
             os.path.join(
                 self.test_dir, 'public/wp-content/plugins/form-assembly/wp_formassembly.php')),
             msg="wp_formassembly.php not found.")
+
 
     def test_install_plugin_from_git(self):
 

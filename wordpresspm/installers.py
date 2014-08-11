@@ -130,6 +130,20 @@ class ZIPInstaller(BaseInstaller):
         return True
 
 
+class WPZIPInstaller(ZIPInstaller):
+
+    """ Installs a plugin from the official wordpress plugins site. """
+
+    def move_tmp(self, src, dest):
+        """ A conventional Wordpress plugin will have only one directory whose
+            name will be the same as the plugin's name. Here, we'll add that
+            directory name to our path """
+
+        src = os.path.join(src, self.plugin_name)
+
+        super(WPZIPInstaller, self).move_tmp(src, dest)
+
+
 class GITInstaller(BaseInstaller):
 
     """ Clones a git repository """
