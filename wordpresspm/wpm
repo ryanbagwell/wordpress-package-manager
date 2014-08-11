@@ -195,10 +195,12 @@ class WPM(object):
 
         try:
             instance = Installer(**params)
-            instance.install()
-            print "Installed " + params['plugin_name']
         except:
-            print "Couldn't find installer for %s. Is your syntax correct?" % self.plugin_name
+            print "Couldn't find installer for %s. Is your syntax correct?" % line.strip()
+            sys.exit(0)
+
+        instance.install()
+        print "Installed " + params['plugin_name']
 
     def _get_installer(self, protocol=None):
         if protocol is None:
