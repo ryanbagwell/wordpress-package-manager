@@ -4,7 +4,11 @@ import os
 import sys
 import re
 import shutil
-import installers
+
+try:
+    import installers
+except:
+    from wordpresspm import installers
 
 
 class WPM(object):
