@@ -170,9 +170,9 @@ class SVNInstaller(BaseInstaller):
         if _continue is False:
             return
 
-        print "Exporting %s from %s" % (self.plugin_name, self.svn_url)
+        print "Exporting %s from %s" % (self.plugin_name, self.url)
 
-        self._run_command(['svn', 'export', self.url, self.target_location])
+        self._run_command(['svn', 'export', '--force', self.url, self.target_location])
 
 
 class WPInstaller(BaseInstaller):
